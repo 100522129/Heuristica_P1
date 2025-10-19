@@ -1,0 +1,30 @@
+# Datos de prueba para parte-2-2.mod
+
+# ===============================
+# Conjuntos
+# ===============================
+set AUTOBUS := A1 A2 A3;
+set TALLER := T1 T2;
+set FRANJA := F1 F2;
+
+# ===============================
+# Parámetros
+# ===============================
+
+# Matriz de pasajeros compartidos c_ij (C[i,j])
+# (simétrica, diagonal = 0)
+param C :
+        A1  A2  A3 :=
+  A1     0   20  10
+  A2    20    0  30
+  A3    10   30   0 ;
+
+# Disponibilidad de franjas por taller (O[s,t])
+# 1 = franja disponible, 0 = no disponible
+param O :
+        T1  T2 :=
+  F1     1   1
+  F2     1   0 ;
+
+end;
+
