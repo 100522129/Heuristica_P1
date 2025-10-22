@@ -1,14 +1,18 @@
-#!/usr/bin/env python3
+#!env python3
 import sys
 import os
-import re
 import subprocess
 
 def generar_fichero_dat(n, m, k_d, k_p, distancias, pasajeros, path):
-
+    """
+    Genera el fichero de salida (.dat) con el formato que requiere GLPK
+    """
     try:
         with open (path, 'w') as f:
+            
             # Parámetros escalares
+            f.write(f"param n := {n};\n")
+            f.write(f"param m := {m};\n")
             f.write(f"param k_d := {k_d};\n")
             f.write(f"param k_p := {k_p};\n\n")
 
@@ -18,13 +22,15 @@ def generar_fichero_dat(n, m, k_d, k_p, distancias, pasajeros, path):
 
             # Escribir parámetro de distancias (d)
             f.write("param d := \n")
-            f.write('\n'.join(f"    {i} {dist}" for i, dist in enumerate(distancias, 1)))
-            f.write("\n;\n\n") # Añade el salto de línea final y el punto y coma
+            for i, dist in enumerate(distancias, 1):
+                f.write(f"    {i} {dist}\n")
+            f.write(";\n\n")
 
             # Escribir parámetro de pasajeros (p)
             f.write("param p := \n")
-            f.write('\n'.join(f"    {i} {pas}" for i, pas in enumerate(pasajeros, 1)))
-            f.write("\n;\n\n")
+            for i, pas in enumerate(pasajeros, 1):
+                f.write(f"    {i} {pas}\n")
+            f.write(";\n\n")
 
             f.write("end;\n")
 
@@ -77,16 +83,15 @@ def resolver_problema(mod_file, dat_file):
         num_vars = m.group(2)
 
     pattern = re.compile(
-        r"^\s*\d+\s+([xy]\[(\d+)(?:\s*,\s*(\d+))?\])\b.*?([-+]?\d*\.?\d+(?:[eE][-+]?\d+)?)\s*$",
+        r"^\s*\d+\s+(x\[(\d+),(\d+)\]|y\[(\d+)\])\s+[A-Z]+\s+([\d\.]+)", 
         re.MULTILINE
     )
-    print("Hola")
+
     # Itera sobre todas las coincidencias en el fichero .sol
     for m in pattern.finditer(solution_text):
-        print("Línea: ", m)
+        
         # Si el valor (grupo 5) es menor que 1.0, lo ignora
         if float(m.group(5)) < 1.0:
-            print("Ignoro")
             continue
             
         # Asigna la variable
@@ -97,8 +102,10 @@ def resolver_problema(mod_file, dat_file):
             no_asignados.append(int(m.group(4)))
 
     # 3. Imprimir la solución
+    # 3.1 Imprime la primera línea
     print(f"Valor Objetivo: {obj_val} | Variables de decisión: {num_vars} | Restricciones: {num_restr}\n")
 
+    # 3.2 Imprime los autobuses asignados a una franja
     print("Asignaciones (Autobús -> Franja):")
     if asignados:
         for bus in sorted(asignados.keys()):
@@ -106,6 +113,7 @@ def resolver_problema(mod_file, dat_file):
     else:
         print("  - Ningún autobús asignado.")
 
+    # 3.3 Imprime los autobuses sin asignar a ninguna franja
     print("\nAutobuses No Asignados:")
     if no_asignados:
         for bus in sorted(no_asignados):
@@ -131,9 +139,16 @@ def main():
     # 2. Leer y procesar el fichero de entrada
     try:
         with open(input_file, 'r') as f:
+            # Línea 1: n y m
             n, m = map(int, f.readline().strip().split())
+
+            # Línea 2: k_d y k_p
             k_d, k_p = map(float, f.readline().strip().split())
+
+            # Línea 3: Distancias (d1, ..., dm)
             distancias = list(map(int, f.readline().strip().split()))
+
+            # Línea 4: Pasajeros (p1, ..., pm)
             pasajeros = list(map(int, f.readline().strip().split()))
 
         if len(distancias) != m or len(pasajeros) != m:
