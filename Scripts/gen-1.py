@@ -77,18 +77,15 @@ def resolver_problema(mod_file, dat_file):
         num_vars = m.group(2)
 
     pattern = re.compile(
-        r"^\s*\d+\s+([xy]\[(\d+)(?:\s*,\s*(\d+))?\])\b.*?([-+]?\d*\.?\d+(?:[eE][-+]?\d+)?)\s*$",
+        r"^\s*\d+\s*(x\[(\d+),(\d+)\]|y\[(\d+)\])\s*(?:[A-Za-z*]+\s*)?(\S+).*",
         re.MULTILINE
     )
-    print("Hola")
     # Itera sobre todas las coincidencias en el fichero .sol
     for m in pattern.finditer(solution_text):
-        print("Línea: ", m)
         # Si el valor (grupo 5) es menor que 1.0, lo ignora
         if float(m.group(5)) < 1.0:
-            print("Ignoro")
             continue
-            
+        
         # Asigna la variable
         if m.group(2): # Si el grupo 2 (bus de 'x') existe -> asignado
             asignados[int(m.group(2))] = int(m.group(3))
