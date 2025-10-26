@@ -1,35 +1,34 @@
-#!env python3
+#!/usr/bin/env python3
 import sys
 import os
+import re
 import subprocess
 
-def generar_fichero_dat(n, m, k_d, k_p, distancias, pasajeros, path):
-    """
-    Genera el fichero de salida (.dat) con el formato que requiere GLPK
-    """
+def generar_fichero_dat(n, m, u, C, O, path):
+
     try:
         with open (path, 'w') as f:
             
-            # Parámetros escalares
-            f.write(f"param n := {n};\n")
-            f.write(f"param m := {m};\n")
-            f.write(f"param k_d := {k_d};\n")
-            f.write(f"param k_p := {k_p};\n\n")
-
             # Escribir conjuntos
-            f.write(f"set FRANJAS := {' '.join(map(str, range(1, n + 1)))};\n")
-            f.write(f"set AUTOBUSES := {' '.join(map(str, range(1, m + 1)))};\n\n")
+            f.write(f"set FRANJA := {' '.join(map(str, range(1, n + 1)))};\n")
+            f.write(f"set AUTOBUS := {' '.join(map(str, range(1, m + 1)))};\n")
+            f.write(f"set TALLER := {' '.join(map(str, range(1, u + 1)))};\n\n")
 
-            # Escribir parámetro de distancias (d)
-            f.write("param d := \n")
-            for i, dist in enumerate(distancias, 1):
-                f.write(f"    {i} {dist}\n")
+            # Escribir la matriz C:
+            f.write("param C : ")
+            f.write(' '.join(map(str, range(1, m + 1))) + " :=\n")
+            for i in range(m):
+                # Escribe el índice i y la fila de datos
+                f.write(f"  {i+1} {' '.join(map(str, C[i]))}\n")
             f.write(";\n\n")
 
-            # Escribir parámetro de pasajeros (p)
-            f.write("param p := \n")
-            for i, pas in enumerate(pasajeros, 1):
-                f.write(f"    {i} {pas}\n")
+            # Escribir la matriz O
+            f.write("param O : ")
+            f.write(' '.join(map(str, range(1, u + 1))) + " :=\n")
+            for s in range(n):
+                fila_franja_s = [str(O[t][s]) for t in range(u)]
+                # Escribe el índice s y la fila de datos
+                f.write(f"  {s+1} {' '.join(fila_franja_s)}\n")
             f.write(";\n\n")
 
             f.write("end;\n")
@@ -43,7 +42,7 @@ def generar_fichero_dat(n, m, k_d, k_p, distancias, pasajeros, path):
 def resolver_problema(mod_file, dat_file):
     
     # 1. Ejecuta el solver y captura su salida
-    sol_file = "parte-2-1.sol" # Fichero temporal para poder almacenar luego las variables
+    sol_file = "parte-2-2.sol" # Fichero temporal para poder almacenar luego las variables
     command = ["glpsol", "--model", mod_file, "--data", dat_file, "--output", sol_file]
     try:
         result = subprocess.run(command, capture_output=True, text=True, check=True)
@@ -72,8 +71,7 @@ def resolver_problema(mod_file, dat_file):
 
     # 4. Parsear la solución
     obj_val = num_restr = num_vars = ""
-    asignados = {} # Diccionario para {bus: franja}
-    no_asignados = [] # Lista para [bus]
+    asignados = {} # Diccionario para {bus: (taller, franja)}
 
     if m := re.search(r"Objective:.*?= *([-+]?[\d\.]+(?:[eE][-+]?\d+)?)", solution_text):
         obj_val = m.group(1) 
@@ -83,54 +81,42 @@ def resolver_problema(mod_file, dat_file):
         num_vars = m.group(2)
 
     pattern = re.compile(
-        r"^\s*\d+\s+(x\[(\d+),(\d+)\]|y\[(\d+)\])\s+[A-Z]+\s+([\d\.]+)", 
+        r"^\s*\d+\s+x\[(\d+),(\d+),(\d+)\]\s*(?:[A-Za-z*]+\s*)?(\S+).*",
         re.MULTILINE
     )
-
     # Itera sobre todas las coincidencias en el fichero .sol
     for m in pattern.finditer(solution_text):
-        
-        # Si el valor (grupo 5) es menor que 1.0, lo ignora
-        if float(m.group(5)) < 1.0:
+        # Si el valor (grupo 4) es menor que 1.0, lo ignora
+        if float(m.group(4)) < 1.0:
             continue
-            
-        # Asigna la variable
-        if m.group(2): # Si el grupo 2 (bus de 'x') existe -> asignado
-            asignados[int(m.group(2))] = int(m.group(3))
-            
-        elif m.group(4): # Si el grupo 4 (bus de 'y') existe -> no_asignado
-            no_asignados.append(int(m.group(4)))
+        
+        bus_i = int(m.group(1))
+        taller_t = int(m.group(2))
+        franja_s = int(m.group(3))
+        
+        asignados[bus_i] = (taller_t, franja_s)
 
     # 3. Imprimir la solución
-    # 3.1 Imprime la primera línea
-    print(f"Valor Objetivo: {obj_val} | Variables de decisión: {num_vars} | Restricciones: {num_restr}\n")
+    print(f"Valor Objetivo: {obj_val} | Variables: {num_vars} | Restricciones: {num_restr}\n")
 
-    # 3.2 Imprime los autobuses asignados a una franja
     print("Asignaciones (Autobús -> Franja):")
     if asignados:
         for bus in sorted(asignados.keys()):
-            print(f"  - Autobús {bus} asignado a franja {asignados[bus]}")
+            taller, franja = asignados[bus]
+            print(f"  - Autobús {bus} asignado a franja {franja} del taller {taller}")
     else:
         print("  - Ningún autobús asignado.")
-
-    # 3.3 Imprime los autobuses sin asignar a ninguna franja
-    print("\nAutobuses No Asignados:")
-    if no_asignados:
-        for bus in sorted(no_asignados):
-            print(f"  - Autobús {bus} no asignado")
-    else:
-        print("  - Todos los autobuses fueron asignados.")
             
 def main():
 
     # 1. Validación de argumentos de entrada
     if len(sys.argv) != 3:
-        print("Error en el formato: ./gen-1.py <fichero-entrada> <fichero-salida.dat>")
+        print("Error en el formato: ./gen-2.py <fichero-entrada> <fichero-salida.dat>")
         sys.exit(1)
     
     input_file = sys.argv[1]
     dat_file = sys.argv[2]
-    mod_file = "parte-2-1.mod"
+    mod_file = "parte-2-2.mod"
 
     if not os.path.exists(mod_file):
         print(f"Error: No existe la ruta del fichero modelo '{mod_file}'", file=sys.stderr)
@@ -139,21 +125,20 @@ def main():
     # 2. Leer y procesar el fichero de entrada
     try:
         with open(input_file, 'r') as f:
-            # Línea 1: n y m
-            n, m = map(int, f.readline().strip().split())
+            n, m, u = map(int, f.readline().strip().split())
 
-            # Línea 2: k_d y k_p
-            k_d, k_p = map(float, f.readline().strip().split())
+            C =[]
+            for elem in range (m):
+                C.append(list(map(int, f.readline().strip().split())))
+            
+            O = []
+            for _ in range(u):
+                O.append(list(map(int, f.readline().strip().split())))
 
-            # Línea 3: Distancias (d1, ..., dm)
-            distancias = list(map(int, f.readline().strip().split()))
-
-            # Línea 4: Pasajeros (p1, ..., pm)
-            pasajeros = list(map(int, f.readline().strip().split()))
-
-        if len(distancias) != m or len(pasajeros) != m:
-            print(f"Error: El número de autobuses (m={m}) no coincide con los datos (distancias: {len(distancias)}, pasajeros: {len(pasajeros)})", file=sys.stderr)
-            sys.exit(1)
+        if len(C) != m or any(len(row) != m for row in C):
+            raise ValueError(f"Matriz C debe ser {m}x{m}")
+        if len(O) != u or any(len(row) != n for row in O):
+            raise ValueError(f"Matriz O debe ser {u}x{n}")
     
     except FileNotFoundError:
         print(f"Error: Fichero de entrada '{input_file}' no encontrado", file=sys.stderr)
@@ -163,7 +148,7 @@ def main():
         sys.exit(1)
     
     # 3. Generar el fichero de salida (.dat)
-    if not generar_fichero_dat(n, m, k_d, k_p, distancias, pasajeros, dat_file):
+    if not generar_fichero_dat(n, m, u, C, O, dat_file):
         sys.exit(1)
     
     # 4. Resolver el problema con GLPK

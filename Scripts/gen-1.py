@@ -94,7 +94,7 @@ def resolver_problema(mod_file, dat_file):
             no_asignados.append(int(m.group(4)))
 
     # 3. Imprimir la solución
-    print(f"Valor Objetivo: {obj_val} | Variables de decisión: {num_vars} | Restricciones: {num_restr}\n")
+    print(f"Valor Objetivo: {obj_val} | Variables: {num_vars} | Restricciones: {num_restr}\n")
 
     print("Asignaciones (Autobús -> Franja):")
     if asignados:

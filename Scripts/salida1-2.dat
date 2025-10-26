@@ -1,0 +1,19 @@
+param k_d := 10.0;
+param k_p := 50.0;
+
+set FRANJAS := 1 2;
+set AUTOBUSES := 1 2 3;
+
+param d := 
+    1 5
+    2 20
+    3 8
+;
+
+param p := 
+    1 10
+    2 2
+    3 30
+;
+
+end;
