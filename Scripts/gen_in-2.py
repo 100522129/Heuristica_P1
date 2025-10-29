@@ -22,23 +22,41 @@ CASOS_GEN2 = [
 ]
 
 # --- 2. Generador de .in (CAMBIADO) ---
+# gen_in-2.py (Fragmento de la función crear_input_gen2 - VERSIÓN CORREGIDA FINAL)
+
 def crear_input_gen2(filename, n, m, u):
     """Genera un fichero .in de prueba para gen-2.py"""
     with open(filename, 'w') as f:
         # n, m, u
         f.write(f"{n} {m} {u}\n")
         
-        # Matriz C (m x m) - Pasajeros simultáneos
+        # Matriz C (m x m) - Pasajeros simultáneos (Sigue igual)
         for i in range(m):
-            # cii = 0 (asumimos), cij = cji (simétrica)
             row = [str(random.randint(0, 20)) for _ in range(m)]
-            row[i] = "0" # Pasajeros compartidos con uno mismo es 0
+            row[i] = "0"
             f.write(" ".join(row) + "\n")
             
-        # Matriz O (u x n) - Disponibilidad (0 o 1)
+        # Matriz O (n x u) - Disponibilidad (0 o 1)
+        
+        # 1. Crear una lista plana con el mínimo de '1's necesarios
+        # Mínimo de slots necesarios = m (autobuses)
+        num_slots_totales = n * u
+        slots_necesarios = m 
+        
+        # Rellenar con '1' los slots necesarios y el resto con 0 o 1
+        plana = [1] * slots_necesarios + [random.randint(0, 1) for _ in range(num_slots_totales - slots_necesarios)]
+        
+        # Mezclar la lista para que los '1's no estén siempre al principio
+        random.shuffle(plana)
+        
+        # 2. Escribir la matriz O (n filas de u elementos)
         for s in range(n):
-            row = [str(random.randint(0, 1)) for _ in range(u)]
-            f.write(" ".join(row) + "\n")
+            # Obtener la fila de U elementos de la lista plana
+            inicio = s * u
+            fin = inicio + u
+            row_list = plana[inicio:fin]
+            
+            f.write(" ".join(map(str, row_list)) + "\n")
 
 # --- Listas para guardar los resultados ---
 eje_x_tamanos = []  
@@ -58,23 +76,39 @@ for n, m, u in CASOS_GEN2: # <-- Cambiado a n, m, u
     
     start_time = time.perf_counter()
     
+   # gen_in-2.py (fragmento del bucle principal)
+
     try:
+        start_time = time.perf_counter()
+        
         comando = ["python3", SCRIPT_A_PROBAR, input_file, output_dat]
-        subprocess.run(comando, check=True, capture_output=True, text=True)
+        
+        # Almacena el resultado para poder acceder a la salida (stdout)
+        result = subprocess.run(comando, check=True, capture_output=True, text=True)
         
         end_time = time.perf_counter()
         duracion = end_time - start_time
         
-        print(f"Caso (n={n}, m={m}, u={u}): {duracion:.4f} segundos")
-
+        print(f"--- DETALLES DEL CASO (n={n}, m={m}, u={u}) ---")
+        
+        # AÑADIR ESTO: Imprimir la salida estándar (stdout) del script gen-2.py
+        print(result.stdout) 
+        
+        # AÑADIR ESTO: Si stderr contiene algo, significa un error de gen-2.py
+        if result.stderr:
+            print("--- ERROR/ADVERTENCIA CAPTURADA (STDERR de gen-2.py) ---")
+            print(result.stderr)
+        
+        print(f"Duración de la resolución: {duracion:.4f} segundos")
+        
         eje_x_tamanos.append(m) # Guardamos 'm' (autobuses) para el eje X
         eje_y_tiempo.append(duracion)
 
     except subprocess.CalledProcessError as e:
-        print(f"Caso (n={n}, m={m}, u={u}): FALLÓ")
-    except FileNotFoundError:
-        print(f"Error: No se encuentra '{SCRIPT_A_PROBAR}'.")
-        break
+        print(f"\nCaso (n={n}, m={m}, u={u}): FALLÓ - Código de error {e.returncode}")
+        # Si falla, imprimimos el error de GLPK que está en stderr
+        print("ERROR LOG:", e.stderr)
+        # ... (resto del except)
         
     os.remove(input_file)
     if os.path.exists(output_dat):

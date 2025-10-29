@@ -3,7 +3,7 @@ import subprocess
 import time
 import os
 import random
-import matplotlib.pyplot as plt  # <-- 1. Importamos la librería
+import matplotlib.pyplot as plt
 
 # --- Configuración ---
 SCRIPT_A_PROBAR = "gen-1.py" 
@@ -18,7 +18,6 @@ CASOS_GEN1 = [
     (50, 100),
     (75, 150),
     (100, 200)
-    # Añade más casos si quieres una gráfica más detallada
 ]
 
 # --- Generador de .in simple (para gen-1.py) ---
@@ -33,11 +32,11 @@ def crear_input_gen1(filename, n, m):
         f.write(" ".join(pasajeros) + "\n")
 
 # --- Listas para guardar los resultados ---
-eje_x_tamanos = []  # <-- 2. Lista para el eje X (guardará 'm')
-eje_y_tiempos = []  # <-- 3. Lista para el eje Y (guardará el tiempo)
+eje_x_tamanos = []
+eje_y_tiempos = []
 
 # -----------------------------------------------------------------
-# --- Bucle principal de pruebas ---
+# --- Bucle principal de pruebas (MODIFICADO) ---
 # -----------------------------------------------------------------
 print(f"--- Iniciando pruebas para: {SCRIPT_A_PROBAR} ---")
 
@@ -52,19 +51,27 @@ for n, m in CASOS_GEN1:
     
     try:
         comando = ["python3", SCRIPT_A_PROBAR, input_file, output_dat]
-        subprocess.run(comando, check=True, capture_output=True, text=True)
+        
+        # Ejecutamos y capturamos la salida
+        result = subprocess.run(comando, check=True, capture_output=True, text=True)
         
         end_time = time.perf_counter()
         duracion = end_time - start_time
         
-        print(f"Caso (n={n}, m={m}): {duracion:.4f} segundos")
+        # --- NUEVA IMPRESIÓN ---
+        print(f"\n--- DETALLES DEL CASO (n={n}, m={m}) ---")
+        # Imprimir la solución completa capturada
+        print(result.stdout)
+        print(f"Duración de la resolución: {duracion:.4f} segundos")
+        # -----------------------
 
-        # --- 4. Guardamos los datos para la gráfica ---
         eje_x_tamanos.append(m)
         eje_y_tiempos.append(duracion)
 
     except subprocess.CalledProcessError as e:
-        print(f"Caso (n={n}, m={m}): FALLÓ")
+        print(f"\nCaso (n={n}, m={m}): FALLÓ - Código de error {e.returncode}")
+        # Mostrar el error de infactibilidad o parsing de GLPK
+        print("ERROR LOG:", e.stderr) 
     except FileNotFoundError:
         print(f"Error: No se encuentra '{SCRIPT_A_PROBAR}'.")
         break
@@ -73,21 +80,21 @@ for n, m in CASOS_GEN1:
     if os.path.exists(output_dat):
         os.remove(output_dat)
 
-print("--- Pruebas finalizadas ---")
+print("\n--- Pruebas finalizadas ---")
 
 # -----------------------------------------------------------------
 # --- 5. Mostrar la gráfica ---
 # -----------------------------------------------------------------
-if eje_x_tamanos: # Solo si tenemos datos
+if eje_x_tamanos:
     print("Mostrando gráfica...")
     plt.figure(figsize=(8, 5))
-    plt.plot(eje_x_tamanos, eje_y_tiempos, 'o-') # 'o-' = puntos y líneas
+    plt.plot(eje_x_tamanos, eje_y_tiempos, 'o-')
     
     plt.title(f"Rendimiento de {SCRIPT_A_PROBAR}")
     plt.xlabel("Número de Autobuses (m)")
     plt.ylabel("Tiempo (segundos)")
-    plt.grid(True) # Pone una rejilla
+    plt.grid(True)
     
-    plt.show() # <-- ESTO ABRE LA VENTANA
+    plt.show()
 else:
     print("No se generaron datos, no se puede mostrar la gráfica.")
