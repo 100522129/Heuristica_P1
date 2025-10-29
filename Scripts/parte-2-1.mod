@@ -32,10 +32,4 @@ minimize CosteTotal:
     # 2. Coste total de autobuses NO ASIGNADOS
     + sum {j in AUTOBUSES} (k_p * p[j] * y[j]);
 
-solve;
-
-display x;
-display y;
-display CosteTotal;
-
 end;

@@ -44,4 +44,4 @@ s.t. RY3 {i in AUTOBUS, j in AUTOBUS, s in FRANJA: j > i}: y[i,j,s] >= z[i,s] + 
 # (es decir, autobuses que coinciden en misma franja pero en talleres distintos)
 minimize CosteTotal: sum {i in AUTOBUS, j in AUTOBUS, s in FRANJA: j > i} C[i,j] * y[i,j,s];
 
-
+end;
