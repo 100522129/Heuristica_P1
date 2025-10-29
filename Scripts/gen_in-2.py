@@ -36,8 +36,8 @@ def crear_input_gen2(filename, n, m, u):
             f.write(" ".join(row) + "\n")
             
         # Matriz O (u x n) - Disponibilidad (0 o 1)
-        for _ in range(u):
-            row = [str(random.randint(0, 1)) for _ in range(n)]
+        for s in range(n):
+            row = [str(random.randint(0, 1)) for _ in range(u)]
             f.write(" ".join(row) + "\n")
 
 # --- Listas para guardar los resultados ---

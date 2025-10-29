@@ -24,11 +24,10 @@ def generar_fichero_dat(n, m, u, C, O, path):
 
             # Escribir la matriz O
             f.write("param O : ")
-            f.write(' '.join(map(str, range(1, u + 1))) + " :=\n")
+            f.write(' '.join(map(str, range(1, u + 1))) + " :=\n") # Escribe u columnas
             for s in range(n):
-                fila_franja_s = [str(O[t][s]) for t in range(u)]
                 # Escribe el índice s y la fila de datos
-                f.write(f"  {s+1} {' '.join(fila_franja_s)}\n")
+                f.write(f"  {s+1} {' '.join(map(str, O[s]))}\n")
             f.write(";\n\n")
 
             f.write("end;\n")
@@ -132,12 +131,12 @@ def main():
                 C.append(list(map(int, f.readline().strip().split())))
             
             O = []
-            for _ in range(u):
+            for _ in range(n):
                 O.append(list(map(int, f.readline().strip().split())))
 
         if len(C) != m or any(len(row) != m for row in C):
             raise ValueError(f"Matriz C debe ser {m}x{m}")
-        if len(O) != u or any(len(row) != n for row in O):
+        if len(O) != n or any(len(row) != u for row in O):
             raise ValueError(f"Matriz O debe ser {u}x{n}")
     
     except FileNotFoundError:
