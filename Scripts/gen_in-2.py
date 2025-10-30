@@ -9,20 +9,18 @@ import matplotlib.pyplot as plt
 SCRIPT_A_PROBAR = "gen-2.py" 
 
 # (n_franjas, m_autobuses, u_talleres)
-# ¡¡IMPORTANTE!! El problema gen-2 requiere que n * u >= m
+# Requisito: requiere que n * u >= m
 CASOS_GEN2 = [
-    # (n, m, u)
-    (5, 10, 2),   # n*u = 10 >= 10
-    (10, 20, 2),  # n*u = 20 >= 20
-    (10, 30, 3),  # n*u = 30 >= 30
-    (10, 40, 4),  # n*u = 40 >= 40
-    (10, 50, 5),  # n*u = 50 >= 50
-    (20, 100, 5), # n*u = 100 >= 100
-    # Añade más casos si quieres
+    # (n = franjas, m = autobuses, u = talleres)
+    (20, 1, 4),
+    (40, 10, 4),
+    (60, 20, 4),
+    (80, 30, 4),
+    (90, 40, 4),
+    (100, 50, 4),
 ]
 
 # --- 2. Generador de .in (CAMBIADO) ---
-# gen_in-2.py (Fragmento de la función crear_input_gen2 - VERSIÓN CORREGIDA FINAL)
 
 def crear_input_gen2(filename, n, m, u):
     """Genera un fichero .in de prueba para gen-2.py"""
@@ -32,7 +30,7 @@ def crear_input_gen2(filename, n, m, u):
         
         # Matriz C (m x m) - Pasajeros simultáneos (Sigue igual)
         for i in range(m):
-            row = [str(random.randint(0, 20)) for _ in range(m)]
+            row = [str(random.randint(1, 20)) for _ in range(m)]
             row[i] = "0"
             f.write(" ".join(row) + "\n")
             
